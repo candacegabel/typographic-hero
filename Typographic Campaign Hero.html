@@ -1,0 +1,188 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>HERE — Text Hero Animation</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      --font:    'Power Grotesk', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      --bg:      #ffffff;
+      --pad-x:   clamp(32px, 6vw, 96px);
+      --pad-y:   clamp(64px, 10vh, 128px);
+      --size:    clamp(36px, 6.5vw, 90px);
+      --lh:      1.08;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body { background: var(--bg); }
+
+    .hero {
+      position: relative;
+      min-height: 100vh;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      padding: var(--pad-y) var(--pad-x);
+    }
+
+    .hero-text {
+      font-family: var(--font);
+      font-size: var(--size);
+      line-height: var(--lh);
+      font-weight: 500;
+      letter-spacing: -0.02em;
+    }
+
+    .hero-line        { display: block; }
+    .hero-line-inner  { display: block; color: #E1DCFF; transition: color 0.4s ease; }
+
+    .hero-line--payoff .hero-line-inner {
+      color: #6450FF;
+      font-weight: 700;
+    }
+
+    .word {
+      display: inline;
+      opacity: 0;
+      animation: snap 1ms step-start forwards;
+    }
+
+    @keyframes snap { to { opacity: 1; } }
+
+    .scroll-cta {
+      position: absolute;
+      right: var(--pad-x);
+      bottom: var(--pad-y);
+      background: none;
+      border: none;
+      padding: 8px;
+      cursor: pointer;
+      color: #6450FF;
+      opacity: 0;
+      transition: color 0.2s ease;
+      animation:
+        arrowAppear 0.5s ease forwards 7.0s,
+        arrowFloat  2.2s ease-in-out infinite 7.5s;
+    }
+
+    .scroll-cta:hover { color: #641E55; }
+
+    @keyframes arrowAppear { to { opacity: 1; } }
+    @keyframes arrowFloat {
+      0%, 100% { transform: translateY(0);   }
+      50%       { transform: translateY(7px); }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .word       { animation: none; opacity: 1; }
+      .scroll-cta { animation: none; opacity: 1; }
+    }
+  </style>
+</head>
+<body>
+
+  <section class="hero">
+    <p class="hero-text" aria-label="Enterprise tech isn't broken. It's trapped. Bloated. Blocked. Held back. That ends with HERE.">
+      <span class="hero-line" aria-hidden="true">
+        <span class="hero-line-inner">Enterprise tech isn't broken.</span>
+      </span>
+      <span class="hero-line" aria-hidden="true">
+        <span class="hero-line-inner">It's trapped.</span>
+      </span>
+      <span class="hero-line" aria-hidden="true">
+        <span class="hero-line-inner">Bloated.</span>
+      </span>
+      <span class="hero-line" aria-hidden="true">
+        <span class="hero-line-inner">Blocked.</span>
+      </span>
+      <span class="hero-line" aria-hidden="true">
+        <span class="hero-line-inner">Held back.</span>
+      </span>
+      <span class="hero-line hero-line--payoff" aria-hidden="true">
+        <span class="hero-line-inner">That ends with HERE.</span>
+      </span>
+    </p>
+
+    <button class="scroll-cta" aria-label="Learn more">
+      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="48" viewBox="0 0 20 48" fill="none" aria-hidden="true">
+        <line x1="10" y1="0" x2="10" y2="38" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>
+        <path d="M2 30L10 38L18 30" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </button>
+  </section>
+
+  <script>
+    const START  = 700;
+    const PAUSES = [1600, 1200, 600, 600, 1600];
+
+    const textEl = document.querySelector('.hero-text');
+    const lines  = document.querySelectorAll('.hero-line-inner');
+    let t = START;
+    const times = [];
+
+    lines.forEach((line, i) => {
+      const isLast = i === lines.length - 1;
+      times.push(t);
+
+      if (isLast) {
+        line.textContent = '';
+        const span = document.createElement('span');
+        span.className = 'word';
+        span.textContent = 'That ends with HERE.';
+        span.style.animationDelay = t + 'ms';
+        line.appendChild(span);
+      } else {
+        const span = document.createElement('span');
+        span.className = 'word';
+        span.textContent = line.textContent.trim();
+        span.style.animationDelay = t + 'ms';
+        line.textContent = '';
+        line.appendChild(span);
+        t += PAUSES[i];
+      }
+    });
+
+    // Each line snaps on as #6450FF, dims to #E1DCFF when the next appears
+    times.forEach((time, i) => {
+      setTimeout(() => {
+        lines[i].style.color = '#6450FF';
+        if (i > 0) lines[i - 1].style.color = '#E1DCFF';
+      }, time);
+    });
+
+    // Position: line 1 starts at center, stack inches up, payoff settles it
+    document.fonts.ready.then(() => {
+      requestAnimationFrame(() => {
+        const lineH  = textEl.querySelector('.hero-line').offsetHeight;
+        const blockH = textEl.offsetHeight;
+
+        let currentY = (blockH - lineH) / 2;
+        textEl.style.transition = 'none';
+        textEl.style.transform  = `translateY(${currentY}px)`;
+
+        const nudges = [lineH * 0.36, lineH * 0.46, lineH * 0.54, lineH * 0.62];
+
+        times.slice(1, 5).forEach((time, idx) => {
+          setTimeout(() => {
+            currentY -= nudges[idx];
+            textEl.style.transition = 'transform 0.16s ease-out';
+            textEl.style.transform  = `translateY(${currentY}px)`;
+          }, time);
+        });
+
+        setTimeout(() => {
+          textEl.style.transition = 'transform 0.8s cubic-bezier(0.22, 1, 0.36, 1)';
+          textEl.style.transform  = 'translateY(0)';
+        }, times[5]);
+      });
+    });
+  </script>
+
+</body>
+</html>
